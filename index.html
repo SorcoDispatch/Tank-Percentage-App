@@ -1,9 +1,18 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tank Percentage Calculator</title>
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 20px; background: #f2f2f2; }
     .tank-form { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -15,16 +24,6 @@
     .alert { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-top: 10px; }
     .logo { max-width: 200px; display: block; margin-bottom: 20px; }
   </style>
-
-  <link rel="manifest" href="manifest.json" />
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js");
-      });
-    }
-  </script>
-
 </head>
 <body>
   <img src="sorensen-logo.jpg" alt="Sorensen Transport Logo" class="logo" />
@@ -33,33 +32,52 @@
     <input type="number" id="totalDelivery" min="0" />
   </label>
   <button onclick="calculateAll()">Distribute and Calculate</button>
+  <button id="installBtn" style="display: none; margin-left: 10px;">Install App</button>
   <div id="app"></div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const app = document.getElementById('app');
-      for (let i = 1; i <= 6; i++) {
-        const tankForm = document.createElement('div');
-        tankForm.className = 'tank-form';
-        tankForm.innerHTML = `
-          <h2>Tank ${i}</h2>
-          <label>Tank Size:
-            <select onchange="toggleCustomSize(this, 'customSize${i}')">
-              <option value="18000">18,000</option>
-              <option value="30000">30,000</option>
-              <option value="other">Other</option>
-            </select>
-            <input type="number" id="customSize${i}" placeholder="Enter custom size" style="display:none;" />
-          </label>
-          <label>Starting Percentage:
-            <input type="number" id="start${i}" min="0" max="100" />
-          </label>
-          <div id="result${i}" class="result"></div>
-          <div id="alert${i}" class="alert" style="display:none;"></div>
-        `;
-        app.appendChild(tankForm);
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'inline-block';
+    });
+
+    installBtn?.addEventListener('click', () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          installBtn.style.display = 'none';
+        });
       }
     });
+
+    const app = document.getElementById('app');
+
+    for (let i = 1; i <= 6; i++) {
+      const tankForm = document.createElement('div');
+      tankForm.className = 'tank-form';
+      tankForm.innerHTML = `
+        <h2>Tank ${i}</h2>
+        <label>Tank Size:
+          <select onchange="toggleCustomSize(this, 'customSize${i}')">
+            <option value="18000">18,000</option>
+            <option value="30000">30,000</option>
+            <option value="other">Other</option>
+          </select>
+          <input type="number" id="customSize${i}" placeholder="Enter custom size" style="display:none;" />
+        </label>
+        <label>Starting Percentage:
+          <input type="number" id="start${i}" min="0" max="100" />
+        </label>
+        <div id="result${i}" class="result"></div>
+        <div id="alert${i}" class="alert" style="display:none;"></div>
+      `;
+      app.appendChild(tankForm);
+    }
 
     function toggleCustomSize(selectEl, inputId) {
       const customInput = document.getElementById(inputId);
@@ -77,7 +95,7 @@
       let totalCapacityTo85 = 0;
 
       for (let i = 1; i <= 6; i++) {
-        const sizeSelect = document.querySelector(`#customSize${i}`).previousElementSibling;
+        const sizeSelect = document.querySelectorAll(`.tank-form:nth-child(${i + 1}) select`)[0];
         const customSizeInput = document.getElementById(`customSize${i}`);
         const start = parseFloat(document.getElementById(`start${i}`).value);
         const tankSize = sizeSelect.value === 'other' ? parseFloat(customSizeInput.value) : parseFloat(sizeSelect.value);
