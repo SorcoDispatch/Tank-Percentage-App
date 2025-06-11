@@ -15,6 +15,16 @@
     .alert { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-top: 10px; }
     .logo { max-width: 200px; display: block; margin-bottom: 20px; }
   </style>
+
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
+
 </head>
 <body>
   <img src="sorensen-logo.jpg" alt="Sorensen Transport Logo" class="logo" />
