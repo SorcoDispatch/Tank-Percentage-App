@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tank Percentage Calculator</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 20px; background: #f2f2f2; }
+    .tank-form { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .tank-form h2 { margin-top: 0; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; }
+    button { margin-top: 15px; padding: 10px 20px; border: none; background: #007BFF; color: #fff; border-radius: 8px; cursor: pointer; }
+    .result { margin-top: 10px; padding: 10px; background: #e8f5e9; border-left: 4px solid #2e7d32; }
+    .alert { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin-top: 10px; }
+    .logo { max-width: 200px; display: block; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <img src="SorensenTransport attachment resized.jpg" alt="Sorensen Transport Logo" class="logo" />
+  <h1>Tank Percentage Calculator</h1>
+  <label>Total Gallons Delivered:
+    <input type="number" id="totalDelivery" min="0" />
+  </label>
+  <button onclick="calculateAll()">Distribute and Calculate</button>
+  <div id="app"></div>
+
+  <script>
+    const app = document.getElementById('app');
+
+    for (let i = 1; i <= 6; i++) {
+      const tankForm = document.createElement('div');
+      tankForm.className = 'tank-form';
+      tankForm.innerHTML = `
+        <h2>Tank ${i}</h2>
+        <label>Tank Size:
+          <select onchange="toggleCustomSize(this, 'customSize${i}')">
+            <option value="18000">18,000</option>
+            <option value="30000">30,000</option>
+            <option value="other">Other</option>
+          </select>
+          <input type="number" id="customSize${i}" placeholder="Enter custom size" style="display:none;" />
+        </label>
+        <label>Starting Percentage:
+          <input type="number" id="start${i}" min="0" max="100" />
+        </label>
+        <div id="result${i}" class="result"></div>
+        <div id="alert${i}" class="alert" style="display:none;"></div>
+      `;
+      app.appendChild(tankForm);
+    }
+
+    function toggleCustomSize(selectEl, inputId) {
+      const customInput = document.getElementById(inputId);
+      customInput.style.display = selectEl.value === 'other' ? 'block' : 'none';
+    }
+
+    function calculateAll() {
+      const totalDelivery = parseFloat(document.getElementById('totalDelivery').value);
+      if (isNaN(totalDelivery) || totalDelivery <= 0) {
+        alert('Please enter a valid total delivery amount.');
+        return;
+      }
+
+      const tanks = [];
+      let totalCapacityTo85 = 0;
+
+      for (let i = 1; i <= 6; i++) {
+        const sizeSelect = document.querySelectorAll(\`.tank-form:nth-child(\${i + 1}) select\`)[0];
+        const customSizeInput = document.getElementById(\`customSize\${i}\`);
+        const start = parseFloat(document.getElementById(\`start\${i}\`).value);
+        const tankSize = sizeSelect.value === 'other' ? parseFloat(customSizeInput.value) : parseFloat(sizeSelect.value);
+
+        const resultDiv = document.getElementById(\`result\${i}\`);
+        const alertDiv = document.getElementById(\`alert\${i}\`);
+        resultDiv.innerHTML = '';
+        alertDiv.style.display = 'none';
+
+        if (isNaN(tankSize) || isNaN(start)) continue;
+
+        const startGallons = (start / 100) * tankSize;
+        const maxTo85 = Math.max(0, 0.85 * tankSize - startGallons);
+
+        tanks.push({ i, tankSize, startGallons, maxTo85 });
+        totalCapacityTo85 += maxTo85;
+      }
+
+      if (totalCapacityTo85 === 0) {
+        alert('No available capacity in tanks to 85%.');
+        return;
+      }
+
+      tanks.forEach(tank => {
+        const allocated = totalDelivery * (tank.maxTo85 / totalCapacityTo85);
+        const endGallons = tank.startGallons + allocated;
+        const endPercent = (endGallons / tank.tankSize) * 100;
+        const to85 = Math.max(0, 0.85 * tank.tankSize - endGallons);
+
+        const resultDiv = document.getElementById(\`result\${tank.i}\`);
+        const alertDiv = document.getElementById(\`alert\${tank.i}\`);
+
+        resultDiv.innerHTML = \`Delivered: \${allocated.toFixed(2)} gal<br>End %: \${endPercent.toFixed(2)}%<br>Gallons to 85%: \${to85.toFixed(2)}\`;
+
+        if (endPercent > 85) {
+          alertDiv.innerHTML = '⚠️ End percentage exceeds 85%! Please call dispatch.';
+          alertDiv.style.display = 'block';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
