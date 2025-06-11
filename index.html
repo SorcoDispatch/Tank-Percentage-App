@@ -66,7 +66,7 @@
       let totalCapacityTo85 = 0;
 
       for (let i = 1; i <= 6; i++) {
-        const sizeSelect = document.querySelectorAll(\`.tank-form:nth-child(\${i + 1}) select\`)[0];
+        const sizeSelect = document.querySelectorAll(\`.tank-form:nth-child(\${i + 2}) select\`)[0];
         const customSizeInput = document.getElementById(\`customSize\${i}\`);
         const start = parseFloat(document.getElementById(\`start\${i}\`).value);
         const tankSize = sizeSelect.value === 'other' ? parseFloat(customSizeInput.value) : parseFloat(sizeSelect.value);
